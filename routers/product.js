@@ -10,5 +10,6 @@ router.get('/', product.get)
 router.get('/all', auth.jwt, auth.admin, product.getAll)
 router.get('/:id', product.getId)
 router.patch('/:id', auth.jwt, auth.admin, upload, product.edit)
+// router.patch('user/favorites', auth.jwt, product.get)
 
 export default router

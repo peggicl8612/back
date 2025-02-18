@@ -46,6 +46,12 @@ const schema = new Schema(
         message: 'userEmailInvalid',
       },
     },
+
+    likes: {
+      type: Map,
+      of: Boolean,
+      default: {},
+    },
     tokens: {
       type: [String],
     },

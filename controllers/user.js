@@ -33,10 +33,37 @@ export const create = async (req, res) => {
   }
 }
 
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password') // 不回傳密碼
+    res.json({ result: users })
+  } catch (error) {
+    console.error('獲取使用者列表錯誤:', error)
+    res.status(500).json({ message: '伺服器錯誤' })
+  }
+}
+
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params
+    const updates = req.body
+
+    const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true })
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    res.json({ message: 'User updated successfully', result: updatedUser })
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error: error.message })
+  }
+}
+
 export const login = async (req, res) => {
   try {
     // jwt.sign(儲存資料, SECRET, 設定)
-    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7 days' })
+    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '5 s' })
     req.user.tokens.push(token)
     await req.user.save()
     res.status(StatusCodes.OK).json({
@@ -59,21 +86,24 @@ export const login = async (req, res) => {
 }
 
 export const profile = async (req, res) => {
-  res.status(StatusCodes.OK).json({
-    success: true,
-    message: '',
-    result: {
-      account: req.user.account,
-      role: req.user.role,
-      cart: req.user.cartQuantity,
-    },
-  })
+  try {
+    console.log('收到請求 /user/me，req.user:', req.user) // 確保前端帶了 token
+    const user = await User.findById(req.user._id).select('-password')
+    console.log('後端找到的 user:', user) // 確保 user 有抓到資料
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    res.json({ result: user }) // 確保回應資料
+  } catch (error) {
+    console.error('獲取用戶資料錯誤:', error)
+    res.status(500).json({ message: 'Error fetching profile', error: error.message })
+  }
 }
 
 export const refresh = async (req, res) => {
   try {
     const idx = req.user.tokens.findIndex((token) => token === req.token)
-    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7 days' })
+    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '5 s' })
     req.user.tokens[idx] = token
     await req.user.save()
     res.status(StatusCodes.OK).json({

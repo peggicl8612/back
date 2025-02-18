@@ -7,7 +7,7 @@ import routerProduct from './routers/product.js'
 import routerOrder from './routers/order.js'
 import cors from 'cors'
 import './passport.js'
-
+import routerCat from './routers/cat.js'
 mongoose
   .connect(process.env.DB_URL)
   .then(() => {
@@ -20,7 +20,27 @@ mongoose
 
 const app = express()
 
+// 可允許來自任何域名的請求
 app.use(cors())
+// app.use(
+//   cors({
+//     // origin = 請求來源網域
+//     // callback(錯誤, 是否允許通過)
+//     origin(origin, callback) {
+//       console.log('origin' + origin)
+//       if (
+//         // postman 的 origin 預設是 undefined
+//         origin.includes('localhost') ||
+//         origin.includes('127.0.0.1') ||
+//         origin.includes('github.io')
+//       ) {
+//         callback(null, true)
+//       } else {
+//         callback(new Error('CORS'), false)
+//       }
+//     },
+//   }),
+// )
 
 app.use(express.json())
 app.use((error, req, res, next) => {
@@ -33,7 +53,10 @@ app.use((error, req, res, next) => {
 app.use('/user', routerUser)
 app.use('/product', routerProduct)
 app.use('/order', routerOrder)
-
+app.use('/cat', routerCat)
+// app.post('/cat', (req, res) => {
+//   res.send('已收到貓咪資料')
+// })
 app.listen(process.env.PORT || 4000, () => {
   console.log('伺服器啟動')
 })
