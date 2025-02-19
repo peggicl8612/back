@@ -35,8 +35,12 @@ export const create = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password') // 不回傳密碼
-    res.json({ result: users })
+    const user = await User.find().select('-password') // 不回傳密碼
+    res.json({
+      account: user.account,
+      email: user.email,
+      phone: user.phone || '', // 確保 phone 欄位存在
+    })
   } catch (error) {
     console.error('獲取使用者列表錯誤:', error)
     res.status(500).json({ message: '伺服器錯誤' })
@@ -45,6 +49,7 @@ export const getAllUsers = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
+    console.log('收到囉')
     const { id } = req.params
     const updates = req.body
 
@@ -63,7 +68,7 @@ export const updateUser = async (req, res) => {
 export const login = async (req, res) => {
   try {
     // jwt.sign(儲存資料, SECRET, 設定)
-    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '5 s' })
+    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7 days' })
     req.user.tokens.push(token)
     await req.user.save()
     res.status(StatusCodes.OK).json({
@@ -74,6 +79,7 @@ export const login = async (req, res) => {
         account: req.user.account,
         role: req.user.role,
         cart: req.user.cartQuantity,
+        phone: req.user.phone || '',
       },
     })
   } catch (error) {
@@ -103,7 +109,7 @@ export const profile = async (req, res) => {
 export const refresh = async (req, res) => {
   try {
     const idx = req.user.tokens.findIndex((token) => token === req.token)
-    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '5 s' })
+    const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7 days' })
     req.user.tokens[idx] = token
     await req.user.save()
     res.status(StatusCodes.OK).json({
