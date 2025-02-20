@@ -33,6 +33,42 @@ export const create = async (req, res) => {
   }
 }
 
+export const getAllUsers = async (req, res) => {
+  try {
+    const user = await User.find().select('-password') // 不回傳密碼
+    res.json({
+      account: user.account,
+      email: user.email,
+      phone: user.phone || '', // 確保 phone 欄位存在
+    })
+  } catch (error) {
+    console.error('獲取使用者列表錯誤:', error)
+    res.status(500).json({ message: '伺服器錯誤' })
+  }
+}
+
+export const updateUser = async (req, res) => {
+  try {
+    console.log('收到囉')
+    const { id } = req.params
+    console.log(req.body)
+    const updates = req.body
+    console.log(updates)
+
+    req.body.image = req.file?.path
+
+    const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true })
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    res.json({ message: 'User updated successfully', result: updatedUser })
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error: error.message })
+  }
+}
+
 export const login = async (req, res) => {
   try {
     // jwt.sign(儲存資料, SECRET, 設定)
@@ -47,6 +83,7 @@ export const login = async (req, res) => {
         account: req.user.account,
         role: req.user.role,
         cart: req.user.cartQuantity,
+        phone: req.user.phone || '',
       },
     })
   } catch (error) {
@@ -59,15 +96,18 @@ export const login = async (req, res) => {
 }
 
 export const profile = async (req, res) => {
-  res.status(StatusCodes.OK).json({
-    success: true,
-    message: '',
-    result: {
-      account: req.user.account,
-      role: req.user.role,
-      cart: req.user.cartQuantity,
-    },
-  })
+  try {
+    console.log('收到請求 /user/me，req.user:', req.user) // 確保前端帶了 token
+    const user = await User.findById(req.user._id).select('-password')
+    console.log('後端找到的 user:', user) // 確保 user 有抓到資料
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    res.json({ result: user }) // 確保回應資料
+  } catch (error) {
+    console.error('獲取用戶資料錯誤:', error)
+    res.status(500).json({ message: 'Error fetching profile', error: error.message })
+  }
 }
 
 export const refresh = async (req, res) => {
@@ -186,5 +226,41 @@ export const updateCart = async (req, res) => {
         message: 'serverError',
       })
     }
+  }
+}
+
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: '請選擇檔案',
+      })
+    }
+
+    if (!req.user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: '未登入',
+      })
+    }
+
+    // 取得 Cloudinary 上傳的圖片 URL
+    const imageUrl = req.file.path
+
+    // 更新使用者頭像
+    const user = await User.findByIdAndUpdate(req.user._id, { image: imageUrl }, { new: true })
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: '上傳成功',
+      image: user.image,
+    })
+  } catch (error) {
+    console.error(error)
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: '伺服器錯誤',
+    })
   }
 }

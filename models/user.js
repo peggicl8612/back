@@ -46,6 +46,22 @@ const schema = new Schema(
         message: 'userEmailInvalid',
       },
     },
+    phone: {
+      type: String,
+      require: false,
+      unique: true,
+    },
+
+    image: {
+      type: String,
+      default: '',
+      require: false,
+    },
+    likes: {
+      type: Map,
+      of: Boolean,
+      default: {},
+    },
     tokens: {
       type: [String],
     },
