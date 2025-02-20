@@ -68,6 +68,7 @@ export const getAll = async (req, res) => {
   }
 }
 
+<<<<<<< HEAD
 export const getId = async (req, res) => {
   try {
     if (!validator.isMongoId(req.params.id)) throw new Error('ID')
@@ -75,10 +76,26 @@ export const getId = async (req, res) => {
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'catIdInvalid',
+=======
+export const getById = async (req, res) => {
+  try {
+    if (!validator.isMongoId(req.params.id)) throw new Error('ID')
+    const result = await Cat.findById(req.params.id)
+    if (!result) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'catNotFound',
+      })
+    }
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '',
+>>>>>>> 7be00343f4afef6de8c9304a2db61335c54ffd24
       result,
     })
   } catch (error) {
     console.log('controller_cat_getId', error)
+<<<<<<< HEAD
     if (error.name === 'CastError' || error.message === 'ID') {
       res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -95,12 +112,19 @@ export const getId = async (req, res) => {
         message: 'severError',
       })
     }
+=======
+    res.status(StatusCodes.BAD_REQUEST).json({
+      success: false,
+      message: 'CatIdInvalid',
+    })
+>>>>>>> 7be00343f4afef6de8c9304a2db61335c54ffd24
   }
 }
 
 export const edit = async (req, res) => {
   try {
     if (!validator.isMongoId(req.params.id)) throw new Error('ID')
+<<<<<<< HEAD
     // 換掉圖片
     // req.body.image = req.file?.path || ''
     // => 當前面是 undefined 會變成空的(編輯時若未更換圖片,表單圖片會是空的文字,又因為有執行驗證,空的文字會變成貓咪的照片必填 => 編輯錯誤)
@@ -111,6 +135,13 @@ export const edit = async (req, res) => {
       // 執行驗證
       runValidators: true,
       // 回傳新的資料
+=======
+
+    req.body.image = req.file?.path ?? undefined
+
+    const result = await Cat.findByIdAndUpdate(req.params.id, req.body, {
+      runValidators: true,
+>>>>>>> 7be00343f4afef6de8c9304a2db61335c54ffd24
       new: true,
     }).orFail(new Error('NOT FOUND'))
 
@@ -147,6 +178,7 @@ export const edit = async (req, res) => {
 
 export const like = async (req, res) => {
   try {
+<<<<<<< HEAD
     const { id } = req.params // 改為 id
     const userId = req.user._id // 從 JWT 取得使用者 ID
 
@@ -167,12 +199,27 @@ export const like = async (req, res) => {
     )
 
     if (!updatedCat) {
+=======
+    const { catId } = req.params
+    const userId = req.user._id // 從 JWT 取得使用者 ID
+
+    if (!validator.isMongoId(catId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'CatIdInvalid',
+      })
+    }
+
+    const cat = await Cat.findById(catId)
+    if (!cat) {
+>>>>>>> 7be00343f4afef6de8c9304a2db61335c54ffd24
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: 'catNotFound',
       })
     }
 
+<<<<<<< HEAD
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'likeSuccess',
@@ -180,6 +227,30 @@ export const like = async (req, res) => {
     })
   } catch (error) {
     console.error('controller_cat_like', error)
+=======
+    if (!cat.likedBy) {
+      cat.likedBy = []
+    }
+
+    if (cat.likedBy.includes(userId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'alreadyLiked',
+      })
+    }
+
+    cat.likedBy.push(userId)
+    cat.likes += 1
+    await cat.save()
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'likeSuccess',
+      likes: cat.likes,
+    })
+  } catch (error) {
+    console.log('controller_cat_like', error)
+>>>>>>> 7be00343f4afef6de8c9304a2db61335c54ffd24
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'serverError',
@@ -189,6 +260,7 @@ export const like = async (req, res) => {
 
 export const unlike = async (req, res) => {
   try {
+<<<<<<< HEAD
     const { id } = req.params // 改為 id
     const userId = req.user._id // 從 JWT 取得使用者 ID
 
@@ -226,5 +298,32 @@ export const unlike = async (req, res) => {
       success: false,
       message: 'serverError',
     })
+=======
+    const { catId } = req.params
+    const userId = req.user._id // 從 JWT 取得使用者 ID
+
+    if (!validator.isMongoId(catId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: 'CatIdInvalid' })
+    }
+
+    const cat = await Cat.findById(catId)
+    if (!cat) {
+      return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'catNotFound' })
+    }
+
+    if (!cat.likedBy.includes(userId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: 'notLiked' })
+    }
+
+    // 從 likedBy 陣列移除該使用者 ID
+    cat.likedBy = cat.likedBy.filter((id) => id.toString() !== userId.toString())
+    cat.likes = Math.max(0, cat.likes - 1)
+    await cat.save()
+
+    res.status(StatusCodes.OK).json({ success: true, message: 'unlikeSuccess', likes: cat.likes })
+  } catch (error) {
+    console.log(error)
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'serverError' })
+>>>>>>> 7be00343f4afef6de8c9304a2db61335c54ffd24
   }
 }
