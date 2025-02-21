@@ -1,20 +1,20 @@
-import { Schema, model, ObjectId, Error } from 'mongoose'
+import { Schema, model, Error } from 'mongoose'
 import validator from 'validator'
 import bcrypt from 'bcrypt'
 import UserRole from '../enums/UserRole.js'
 
-const cartSchema = new Schema({
-  product: {
-    type: ObjectId,
-    ref: 'products',
-    required: [true, 'userCartProductRequired'],
-  },
-  quantity: {
-    type: Number,
-    required: [true, 'userCartQuantityRequired'],
-    min: [1, 'userCartQuantityTooSmall'],
-  },
-})
+// const cartSchema = new Schema({
+//   product: {
+//     type: ObjectId,
+//     ref: 'products',
+//     required: [true, 'userCartProductRequired'],
+//   },
+//   quantity: {
+//     type: Number,
+//     required: [true, 'userCartQuantityRequired'],
+//     min: [1, 'userCartQuantityTooSmall'],
+//   },
+// })
 
 const schema = new Schema(
   {
@@ -69,9 +69,9 @@ const schema = new Schema(
       type: Number,
       default: UserRole.USER,
     },
-    cart: {
-      type: [cartSchema],
-    },
+    // cart: {
+    //   type: [cartSchema],
+    // },
   },
   {
     versionKey: false,
