@@ -1,5 +1,6 @@
 import User from '../models/user.js'
 import Product from '../models/product.js'
+import Cat from '../models/cat.js'
 import { StatusCodes } from 'http-status-codes'
 import jwt from 'jsonwebtoken'
 import validator from 'validator'
@@ -33,6 +34,43 @@ export const create = async (req, res) => {
   }
 }
 
+export const getAllUsers = async (req, res) => {
+  try {
+    const result = await User.find()
+    console.log('取得使用者(後端):', result)
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '',
+      result,
+    })
+  } catch (error) {
+    console.error('獲取使用者列表錯誤:', error)
+    res.status(500).json({ message: '伺服器錯誤' })
+  }
+}
+
+export const updateUser = async (req, res) => {
+  try {
+    console.log('收到囉')
+    const { id } = req.params
+    console.log(req.body)
+    const updates = req.body
+    console.log(updates)
+
+    req.body.image = req.file?.path
+
+    const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true })
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    res.json({ message: 'User updated successfully', result: updatedUser })
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error: error.message })
+  }
+}
+
 export const login = async (req, res) => {
   try {
     // jwt.sign(儲存資料, SECRET, 設定)
@@ -47,6 +85,7 @@ export const login = async (req, res) => {
         account: req.user.account,
         role: req.user.role,
         cart: req.user.cartQuantity,
+        phone: req.user.phone || '',
       },
     })
   } catch (error) {
@@ -59,15 +98,18 @@ export const login = async (req, res) => {
 }
 
 export const profile = async (req, res) => {
-  res.status(StatusCodes.OK).json({
-    success: true,
-    message: '',
-    result: {
-      account: req.user.account,
-      role: req.user.role,
-      cart: req.user.cartQuantity,
-    },
-  })
+  try {
+    console.log('收到請求 /user/me，req.user:', req.user) // 確保前端帶了 token
+    const user = await User.findById(req.user._id).select('-password')
+    console.log('後端找到的 user:', user) // 確保 user 有抓到資料
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    res.json({ result: user }) // 確保回應資料
+  } catch (error) {
+    console.error('獲取用戶資料錯誤:', error)
+    res.status(500).json({ message: 'Error fetching profile', error: error.message })
+  }
 }
 
 export const refresh = async (req, res) => {
@@ -186,5 +228,240 @@ export const updateCart = async (req, res) => {
         message: 'serverError',
       })
     }
+  }
+}
+
+// export const uploadAvatar = async (req, res) => {
+//   try {
+//     if (!req.file) {
+//       return res.status(StatusCodes.BAD_REQUEST).json({
+//         success: false,
+//         message: '請選擇檔案',
+//       })
+//     }
+
+//     if (!req.user) {
+//       return res.status(StatusCodes.UNAUTHORIZED).json({
+//         success: false,
+//         message: '未登入',
+//       })
+//     }
+
+//     // 取得 Cloudinary 上傳的圖片 URL
+//     const imageUrl = req.file.path
+
+//     // 更新使用者頭像
+//     const user = await User.findByIdAndUpdate(req.user._id, { image: imageUrl }, { new: true })
+
+//     return res.status(StatusCodes.OK).json({
+//       success: true,
+//       message: '上傳成功',
+//       image: user.image,
+//     })
+//   } catch (error) {
+//     console.error(error)
+//     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+//       success: false,
+//       message: '伺服器錯誤',
+//     })
+//   }
+// }
+
+// user.js Controller
+// export const updateFavorites = async (req, res) => {
+//   try {
+//     const { catId } = req.body
+//     const id = req.user._id // 確保JWT Token已經驗證過
+
+//     if (!catId) {
+//       return res.status(400).json({ success: false, message: 'catId is required' })
+//     }
+
+//     const user = await User.findById(id)
+//     if (!user) {
+//       return res.status(404).json({ success: false, message: 'User not found' })
+//     }
+
+//     // 檢查貓咪是否已經在收藏列表中
+//     const alreadyLiked = user.likes.includes(catId)
+//     if (!alreadyLiked) {
+//       user.likes.push(catId) // 將貓咪加入收藏
+//     } else {
+//       user.likes = user.likes.filter((id) => id !== catId) // 移除收藏
+//     }
+
+//     await user.save()
+
+//     res.status(200).json({
+//       success: true,
+//       message: alreadyLiked ? 'Cat removed from favorites' : 'Cat added to favorites',
+//     })
+//   } catch (error) {
+//     console.error(error)
+//     res.status(500).json({ success: false, message: 'Internal server error' })
+//   }
+// }
+
+export const like = async (req, res) => {
+  try {
+    const catId = req.body.catId
+    const liked = req.body.liked
+    // const userId = req.user._id
+
+    // 檢查 catId 是否有效
+    if (!validator.isMongoId(catId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'catIdInvalid',
+      })
+    }
+
+    // 取得貓咪資料
+    const cat = await Cat.findById(catId)
+    if (!cat) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cat not found',
+      })
+    }
+
+    // 檢查使用者是否已經按過讚
+    const alreadyLikedCat = req.user.favorites.includes(catId)
+    if (alreadyLikedCat && liked) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already liked this cat',
+      })
+    }
+
+    // 更新 user 和 cat 資料
+    if (liked) {
+      // 如果按讚，加入貓咪到 User 的 favorites
+      req.user.favorites.push(catId)
+
+      // 增加貓咪的 likes 數量
+      cat.likes += 1
+    } else {
+      // 如果取消按讚，移除貓咪ID從 User 的 favorites
+      req.user.favorites = req.user.favorites.filter((id) => id.toString() !== catId)
+
+      // 減少貓咪的 likes 數量
+      cat.likes -= 1
+    }
+
+    // 儲存更新
+    await req.user.save() // 儲存 User 資料
+    await cat.save() // 儲存 Cat 資料
+
+    res.status(200).json({
+      success: true,
+      message: liked ? 'Cat liked successfully' : 'Cat unliked successfully',
+      likes: cat.likes,
+    })
+  } catch (error) {
+    console.error('Error in like controller:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error',
+    })
+  }
+}
+
+export const unlike = async (req, res) => {
+  try {
+    const { catId } = req.params // 改為 id
+    const userId = req.user._id // 從 JWT 取得使用者 ID
+
+    if (!validator.isMongoId(catId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'catIdInvalid',
+      })
+    }
+
+    // 檢查目前的貓咪資訊，避免 likes 變負數
+    const cat = await Cat.findById(catId)
+    if (!cat) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'catNotFound',
+      })
+    }
+
+    // 如果 likes 已經是 0，就不執行 `unlike`
+    if (cat.likes === 0) {
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'unlikeSuccess',
+        likes: 0,
+      })
+    }
+
+    const updatedCat = await Cat.findByIdAndUpdate(
+      catId,
+      {
+        $pull: { likedBy: userId }, // 移除使用者按讚
+        $inc: { likes: -1 }, // 減少按讚數
+      },
+      { new: true }, // 回傳更新後的資料
+    )
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'unlikeSuccess',
+      likes: updatedCat.likes,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'serverError',
+    })
+  }
+}
+
+export const getFavorites = async (req, res) => {
+  try {
+    // 取得使用者資料並填充 favorites 欄位
+    const user = await User.findById(req.user._id).populate('favorites', 'name')
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'User not found',
+      })
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      result: user.favorites, // 返回已喜歡的貓咪清單
+    })
+  } catch (error) {
+    console.error('獲取收藏貓咪錯誤:', error)
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'serverError',
+    })
+  }
+}
+export const toggleFavorite = async (req, res) => {
+  const { catId, liked } = req.body
+  try {
+    const user = await User.findById(req.user._id)
+
+    if (liked) {
+      if (!user.favorites.includes(catId)) {
+        user.favorites.push(catId) // 加入喜好清單
+      }
+    } else {
+      user.favorites = user.favorites.filter((id) => id.toString() !== catId)
+    }
+
+    await user.save()
+
+    const likes = await User.countDocuments({ favorites: catId }) // 計算該貓咪總按讚數
+    res.json({ message: liked ? '已按讚' : '已取消讚', likes })
+  } catch (error) {
+    console.error('更新按讚狀態失敗:', error)
+    res.status(500).json({ message: '無法更新按讚狀態' })
   }
 }

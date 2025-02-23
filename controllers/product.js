@@ -6,6 +6,7 @@ export const create = async (req, res) => {
   try {
     req.body.image = req.file?.path || ''
     const result = await Product.create(req.body)
+    console.log('111', result)
     res.status(StatusCodes.OK).json({
       success: true,
       message: '',
@@ -37,7 +38,7 @@ export const get = async (req, res) => {
       result,
     })
   } catch (error) {
-    console.log(error)
+    console.log('controller_product_get', error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'serverError',
@@ -54,7 +55,7 @@ export const getAll = async (req, res) => {
       result,
     })
   } catch (error) {
-    console.log(error)
+    console.log('controller_product_getAll', error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'serverError',
@@ -72,7 +73,7 @@ export const getId = async (req, res) => {
       result,
     })
   } catch (error) {
-    console.log(error)
+    console.log('controller_product_getId', error)
     if (error.name === 'CastError' || error.message === 'ID') {
       res.status(StatusCodes.BAD_REQUEST).json({
         success: false,

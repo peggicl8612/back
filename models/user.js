@@ -46,6 +46,17 @@ const schema = new Schema(
         message: 'userEmailInvalid',
       },
     },
+    phone: {
+      type: String,
+      require: false,
+      unique: true,
+    },
+
+    image: {
+      type: String,
+      default: '',
+      require: false,
+    },
     tokens: {
       type: [String],
     },
@@ -56,6 +67,12 @@ const schema = new Schema(
     cart: {
       type: [cartSchema],
     },
+    favorites: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Cat',
+      },
+    ],
   },
   {
     versionKey: false,
