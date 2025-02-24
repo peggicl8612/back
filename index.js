@@ -7,6 +7,7 @@ import routerProduct from './routers/product.js'
 import routerOrder from './routers/order.js'
 import routerCat from './routers/cat.js'
 // cors 處理跨網域的請求
+
 import cors from 'cors'
 import './passport.js'
 mongoose
