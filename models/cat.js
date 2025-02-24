@@ -33,7 +33,7 @@ const catSchema = new Schema(
     likedBy: [{ type: Schema.Types.ObjectId, ref: 'users' }],
     isAdopting: {
       type: Boolean,
-      required: false,
+      required: true,
     },
   },
   {
