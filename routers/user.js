@@ -18,8 +18,7 @@ router.get('/all', auth.jwt, user.getAllUsers)
 router.patch('/:id', auth.jwt, upload, user.updateUser)
 router.get('/me', auth.jwt, user.profile)
 // router.patch('/favorites', auth.jwt, user.updateFavorites)
-router.post('/favorites', auth.jwt, user.like) //要在 controllers 新增 cat.js 處理按讚貓咪邏輯
-router.delete('/favorites', auth.jwt, user.unlike)
-router.get('/favorites', auth.jwt, user.getFavorites)
-router.patch('/favorites', auth.jwt, user.toggleFavorite)
+router.post('/favorites', auth.jwt, user.like)
+router.delete('/favorites/:catId', auth.jwt, user.unlike)
+router.get('/favorites', auth.jwt, user.getFavorites) // 獲取使用者按讚的貓咪清單
 export default router

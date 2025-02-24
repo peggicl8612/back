@@ -393,7 +393,7 @@ export const unlike = async (req, res) => {
       return res.status(StatusCodes.OK).json({
         success: true,
         message: 'unlikeSuccess',
-        likes: 0,
+        likes: cat.likes,
       })
     }
 
@@ -422,8 +422,17 @@ export const unlike = async (req, res) => {
 
 export const getFavorites = async (req, res) => {
   try {
-    // 取得使用者資料並填充 favorites 欄位
-    const user = await User.findById(req.user._id).populate('favorites', 'name')
+    // 檢查使用者是否存在
+    if (!req.user || !req.user._id) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: 'Unauthorized access',
+      })
+    }
+
+    // 查找使用者並填充 `favorites`
+    const user = await User.findById(req.user._id).populate('favorites', 'name image likes')
+
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -433,35 +442,13 @@ export const getFavorites = async (req, res) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      result: user.favorites, // 返回已喜歡的貓咪清單
+      result: user.favorites, // 直接返回收藏貓咪清單
     })
   } catch (error) {
     console.error('獲取收藏貓咪錯誤:', error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'serverError',
+      message: 'Server error',
     })
-  }
-}
-export const toggleFavorite = async (req, res) => {
-  const { catId, liked } = req.body
-  try {
-    const user = await User.findById(req.user._id)
-
-    if (liked) {
-      if (!user.favorites.includes(catId)) {
-        user.favorites.push(catId) // 加入喜好清單
-      }
-    } else {
-      user.favorites = user.favorites.filter((id) => id.toString() !== catId)
-    }
-
-    await user.save()
-
-    const likes = await User.countDocuments({ favorites: catId }) // 計算該貓咪總按讚數
-    res.json({ message: liked ? '已按讚' : '已取消讚', likes })
-  } catch (error) {
-    console.error('更新按讚狀態失敗:', error)
-    res.status(500).json({ message: '無法更新按讚狀態' })
   }
 }

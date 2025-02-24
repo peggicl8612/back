@@ -42,4 +42,4 @@ const catSchema = new Schema(
   },
 )
 
-export default model('cats', catSchema)
+export default model('Cat', catSchema)
