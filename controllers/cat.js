@@ -105,7 +105,7 @@ export const edit = async (req, res) => {
     // req.body.image = req.file?.path || ''
     // => 當前面是 undefined 會變成空的(編輯時若未更換圖片,表單圖片會是空的文字,又因為有執行驗證,空的文字會變成貓咪的照片必填 => 編輯錯誤)
 
-    req.body.image = req.file?.path
+    req.body.image = req.file?.path || req.body.image
 
     const result = await Cat.findByIdAndUpdate(req.params.catId, req.body, {
       // 執行驗證

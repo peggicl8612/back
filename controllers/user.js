@@ -369,13 +369,27 @@ export const like = async (req, res) => {
 
 export const unlike = async (req, res) => {
   try {
-    const { catId } = req.params // 改為 id
-    const userId = req.user._id // 從 JWT 取得使用者 ID
+    const { catId } = req.params
+    const userId = req.user._id
 
     if (!validator.isMongoId(catId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'catIdInvalid',
+      })
+    }
+
+    // 從使用者的收藏列表移除該貓咪
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { favorites: catId } }, // 移除 `favorites` 陣列中的該貓咪
+      { new: true },
+    )
+
+    if (!updatedUser) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'userNotFound',
       })
     }
 
@@ -388,28 +402,17 @@ export const unlike = async (req, res) => {
       })
     }
 
-    // 如果 likes 已經是 0，就不執行 `unlike`
-    if (cat.likes === 0) {
-      return res.status(StatusCodes.OK).json({
-        success: true,
-        message: 'unlikeSuccess',
-        likes: cat.likes,
+    // 確保 likes 不會變成負數
+    if (cat.likes > 0) {
+      await Cat.findByIdAndUpdate(catId, {
+        $pull: { likedBy: userId },
+        $inc: { likes: -1 },
       })
     }
-
-    const updatedCat = await Cat.findByIdAndUpdate(
-      catId,
-      {
-        $pull: { likedBy: userId }, // 移除使用者按讚
-        $inc: { likes: -1 }, // 減少按讚數
-      },
-      { new: true }, // 回傳更新後的資料
-    )
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'unlikeSuccess',
-      likes: updatedCat.likes,
     })
   } catch (error) {
     console.error(error)

@@ -6,6 +6,7 @@ import routerUser from './routers/user.js'
 import routerProduct from './routers/product.js'
 import routerOrder from './routers/order.js'
 import routerCat from './routers/cat.js'
+import routerRehome from './routers/rehome.js'
 // cors 處理跨網域的請求
 
 import cors from 'cors'
@@ -58,6 +59,7 @@ app.use('/', routerUser)
 app.use('/product', routerProduct)
 app.use('/order', routerOrder)
 app.use('/cat', routerCat)
+app.use('/rehome', routerRehome)
 
 app.listen(process.env.PORT || 4000, () => {
   console.log('伺服器啟動')
