@@ -66,13 +66,19 @@ export const getAll = async (req, res) => {
 
 export const getByUser = async (req, res) => {
   try {
-    console.log('登入的使用者 req.user:', req.user)
-    const rehomes = await Rehome.find({ userAccount: req.user.account }).select(
-      'userAccount userEmail',
-    )
+    console.log('🛠 取得使用者資訊:', req.user) // 輸出使用者資料，確認 JWT 是否解碼成功
+
+    if (!req.user || !req.user.account) {
+      return res.status(401).json({ success: false, message: '未授權' })
+    }
+
+    // 查詢送養紀錄
+    const rehomes = await Rehome.find({ userAccount: req.user.account })
+    console.log('📄 查詢結果:', rehomes)
+
     res.status(200).json({ success: true, result: rehomes })
   } catch (error) {
-    console.log('controller_rehome_getByUser', error)
+    console.error('❌ 取得送養紀錄失敗:', error)
     res.status(500).json({ success: false, message: 'serverError' })
   }
 }

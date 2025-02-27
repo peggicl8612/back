@@ -55,7 +55,6 @@ app.use((error, req, res, next) => {
 
 app.use('/user', routerUser)
 app.use('/', routerUser)
-// app.use('/user/favorites', routerUser)
 app.use('/product', routerProduct)
 app.use('/order', routerOrder)
 app.use('/cat', routerCat)

@@ -7,7 +7,7 @@ const router = Router()
 
 router.post('/', auth.jwt, upload, rehome.create)
 router.get('/', auth.jwt, auth.admin, rehome.getAll)
-router.get('/', auth.jwt, rehome.getByUser)
+router.get('/mine', auth.jwt, rehome.getByUser)
 router.patch('/:id', auth.jwt, auth.admin, rehome.edit)
 
 export default router
