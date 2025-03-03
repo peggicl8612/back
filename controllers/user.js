@@ -85,7 +85,7 @@ export const login = async (req, res) => {
         account: req.user.account,
         role: req.user.role,
         cart: req.user.cartQuantity,
-        phone: req.user.phone || '',
+        phone: req.user.phone ?? '',
       },
     })
   } catch (error) {
@@ -369,13 +369,27 @@ export const like = async (req, res) => {
 
 export const unlike = async (req, res) => {
   try {
-    const { catId } = req.params // 改為 id
-    const userId = req.user._id // 從 JWT 取得使用者 ID
+    const { catId } = req.params
+    const userId = req.user._id
 
     if (!validator.isMongoId(catId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'catIdInvalid',
+      })
+    }
+
+    // 從使用者的收藏列表移除該貓咪
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { favorites: catId } }, // 移除 `favorites` 陣列中的該貓咪
+      { new: true },
+    )
+
+    if (!updatedUser) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'userNotFound',
       })
     }
 
@@ -388,28 +402,17 @@ export const unlike = async (req, res) => {
       })
     }
 
-    // 如果 likes 已經是 0，就不執行 `unlike`
-    if (cat.likes === 0) {
-      return res.status(StatusCodes.OK).json({
-        success: true,
-        message: 'unlikeSuccess',
-        likes: 0,
+    // 確保 likes 不會變成負數
+    if (cat.likes > 0) {
+      await Cat.findByIdAndUpdate(catId, {
+        $pull: { likedBy: userId },
+        $inc: { likes: -1 },
       })
     }
-
-    const updatedCat = await Cat.findByIdAndUpdate(
-      catId,
-      {
-        $pull: { likedBy: userId }, // 移除使用者按讚
-        $inc: { likes: -1 }, // 減少按讚數
-      },
-      { new: true }, // 回傳更新後的資料
-    )
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'unlikeSuccess',
-      likes: updatedCat.likes,
     })
   } catch (error) {
     console.error(error)
@@ -422,8 +425,17 @@ export const unlike = async (req, res) => {
 
 export const getFavorites = async (req, res) => {
   try {
-    // 取得使用者資料並填充 favorites 欄位
-    const user = await User.findById(req.user._id).populate('favorites', 'name')
+    // 檢查使用者是否存在
+    if (!req.user || !req.user._id) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: 'Unauthorized access',
+      })
+    }
+
+    // 查找使用者並填充 `favorites`
+    const user = await User.findById(req.user._id).populate('favorites', 'name image likes')
+
     if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -433,35 +445,13 @@ export const getFavorites = async (req, res) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      result: user.favorites, // 返回已喜歡的貓咪清單
+      result: user.favorites, // 直接返回收藏貓咪清單
     })
   } catch (error) {
     console.error('獲取收藏貓咪錯誤:', error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'serverError',
+      message: 'Server error',
     })
-  }
-}
-export const toggleFavorite = async (req, res) => {
-  const { catId, liked } = req.body
-  try {
-    const user = await User.findById(req.user._id)
-
-    if (liked) {
-      if (!user.favorites.includes(catId)) {
-        user.favorites.push(catId) // 加入喜好清單
-      }
-    } else {
-      user.favorites = user.favorites.filter((id) => id.toString() !== catId)
-    }
-
-    await user.save()
-
-    const likes = await User.countDocuments({ favorites: catId }) // 計算該貓咪總按讚數
-    res.json({ message: liked ? '已按讚' : '已取消讚', likes })
-  } catch (error) {
-    console.error('更新按讚狀態失敗:', error)
-    res.status(500).json({ message: '無法更新按讚狀態' })
   }
 }

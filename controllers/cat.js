@@ -4,7 +4,7 @@ import validator from 'validator'
 
 // 新增貓咪
 export const create = async (req, res) => {
-  // console.log('Received body:', req.body)
+  console.log('Received body:', req.body)
   // console.log('Received file:', req.file)
   try {
     // 檢查並處理圖片資料
@@ -17,7 +17,7 @@ export const create = async (req, res) => {
       result,
     })
   } catch (error) {
-    console.log(error)
+    console.log('新增貓咪', error)
     if (error.name === 'ValidationError') {
       const key = Object.keys(error.errors)[0]
       res.status(StatusCodes.BAD_REQUEST).json({
@@ -53,11 +53,11 @@ export const get = async (req, res) => {
 // 新增 getAll 處理取得所有貓咪資料的邏輯(只有管理員可以看到)
 export const getAll = async (req, res) => {
   try {
-    const result = await Cat.find()
+    const cats = await Cat.find()
     res.status(StatusCodes.OK).json({
       success: true,
       message: '',
-      result,
+      result: cats,
     })
   } catch (error) {
     console.log('controller_cat_getAll', error)
@@ -100,6 +100,15 @@ export const getId = async (req, res) => {
 
 export const edit = async (req, res) => {
   try {
+    const catId = req.params.catId
+    if (!catId || !validator.isMongoId(catId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid cat ID',
+      })
+    }
+    console.log('Request body:', req.body)
+    console.log('Uploaded file:', req.file)
     if (!validator.isMongoId(req.params.catId)) throw new Error('ID')
     // 換掉圖片
     // req.body.image = req.file?.path || ''

@@ -11,7 +11,7 @@ router.get('/', cat.get)
 router.get('/all', auth.jwt, auth.admin, cat.getAll)
 
 router.get('/:id', cat.getId)
-router.patch('/:id', auth.jwt, auth.admin, upload, cat.edit)
+router.patch('/:catId', auth.jwt, auth.admin, upload, cat.edit)
 
 // 按讚與取消按讚
 router.post('/:catId/like', auth.jwt, cat.like) //要在 controllers 新增 cat.js 處理按讚貓咪邏輯

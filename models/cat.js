@@ -33,7 +33,7 @@ const catSchema = new Schema(
     likedBy: [{ type: Schema.Types.ObjectId, ref: 'users' }],
     isAdopting: {
       type: Boolean,
-      required: false,
+      required: true,
     },
   },
   {
@@ -42,4 +42,4 @@ const catSchema = new Schema(
   },
 )
 
-export default model('cats', catSchema)
+export default model('Cat', catSchema)
